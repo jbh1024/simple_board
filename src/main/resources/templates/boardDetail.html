@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <title>Board</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <script src="/webjars/jquery/2.1.3/dist/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/3.3.6/dist/js/bootstrap.min.js"></script>
+    <script>
+
+        function modifyBytton() {
+
+            $("#title").attr("readonly",false);
+            $("#writer").attr("readonly",false);
+            $("#content").attr("readonly",false);
+            $("#modifyButton").addClass('hidden');
+            $("#saveButton").removeClass('hidden');
+            $("#deleteButton").removeClass('hidden');
+        }
+
+    $(document).ready(function() {
+            var id = $("#id").val();
+            if (id == ""){
+
+                $("#deleteButton").addClass('hidden');
+                $("#modifyButton").addClass('hidden');
+
+            }else{
+                $("#title").attr("readonly",true);
+                $("#writer").attr("readonly",true);
+                $("#content").attr("readonly",true);
+                $("#saveButton").addClass('hidden');
+                $("#deleteButton").addClass('hidden');
+
+
+            };
+        });
+        function writeBoard() {
+            var type = "POST";
+            if (confirm('저장하시겠습니까??') == true) {
+                var id = $("#id").val();
+                var title = $("#title").val();
+                var writer = $("#writer").val();
+                var content = $("#content").val();
+                var data = {"id": id, "title": title, "writer": writer, "content": content};
+                var json = JSON.stringify(data);
+                if(id != "") {
+                    var type = "PUT"
+                }
+
+                $("#resultsBlock").prop("disabled", true);
+                $.ajax({
+                    type: type,
+                    contentType: "application/json; charset=utf-8",
+                    url: "/api/board",
+                    data: json,
+                    dataType: 'json',
+                    async: false,
+                    cache: false,
+                    timeout: 600000,
+                    beforeSend: function (xhr) {
+                        if (title == "") {
+                            alert('제목(title)을 입력하세요.');
+                            $("#title").focus();
+                            $("#resultsBlock").hide();
+                            xhr.abort();
+                            return false;
+                        } else if (writer == "") {
+                            alert('작성자(writer)을 입력하세요.');
+                            $("#writer").focus();
+                            $("#resultsBlock").hide();
+                            xhr.abort();
+                            return false;
+                        } else if (content == "") {
+                            alert('내용(content)을 입력하세요.');
+                            $("#content").focus();
+                            $("#resultsBlock").hide();
+                            xhr.abort();
+                            return false;
+                        }
+                    },
+                    success: function (data) {
+                        // var resulrtId = JSON.parse(data).id;
+                        alert("저장되었습니다.");
+                        window.location.href = "/board/" + data.id;
+                    },
+                    error: function (e) {
+                        alert("Error" + JSON.parse(e.responseText).message);
+                        console.log("ERROR : ", e);
+                    }
+                });
+            }
+        }
+
+        function deleteBoard() {
+            // jConfirm('삭제하시겠습니까??',  '', function(r) {
+            if (confirm('삭제하시겠습니까??') == true) {
+                var id = $("#id").val();
+                var data = {"id": id};
+                var json = JSON.stringify(data);
+                $.ajax({
+                    type: "DELETE",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/api/board",
+                    data: json,
+                    dataType: 'json',
+                    async: false,
+                    cache: false,
+                    timeout: 600000,
+                    success: function (data) {
+                        // var resulrtId = JSON.parse(data).id;
+                        alert("삭제되었습니다.");
+                        window.location.href = "/"
+
+                    },
+                    error: function (e) {
+                        alert("Error" + JSON.parse(e.responseText).message);
+                        console.log("ERROR : ", e);
+                    }
+                });
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="/webjars/bootstrap/3.3.6/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="panel-title row table-bordered">
+        <h3>Write Board
+        </h3>
+    </div>
+    <div class="listBlock row table-bordered">
+        <div class="input-block">
+            <form id="boardContent" name="boardContent" th:object="${boardContent}">
+                <div class="form-group hidden">
+                    <label class="label-md col-md-2" for="id">id : </label>
+                    <input class="label-md col-md-2" th:field="*{id}" th:readonly="readonly" id="id" name="id"/>
+                    <label class="label-md col-md-1" for="createDate">작성시간 : </label>
+                    <input class="input-sm col-md-3" type="text" th:field="*{createDate}" th:readonly="readonly"
+                           id="createDate" name="createDate"/>
+                </div>
+                <br/>
+                <br/>
+                <div class="form-group">
+                    <label class="label-md col-md-1" for="title">제목 : </label>
+                    <input class="input-md col-md-4" type="text" th:field="*{title}" id="title" name="title"
+                           autofocus="autofocus" required="required" placeholder="제목을 입력하세요"/>
+                    <label class="label-md col-md-1" for="writer">작성자 : </label>
+                    <input class="input-md col-md-1" type="text" th:field="*{writer}" id="writer" name="writer"
+                           required="required" placeholder="작성자"/>
+                    <label class="label-md col-md-1" for="updateDate">수정일 : </label>
+<!--                    <input class="input-sm col-md-2" type="text" th:field="*{updateDate}" th:readonly="readonly"-->
+<!--                           id="updateDate" name="updateDate"/>-->
+                    <label class="input-md col-md-2" type="text" th:field="*{updateDate}"
+                           id="updateDate" name="updateDate"  th:text="${#temporals.format(boardContent.updateDate, 'yyyy/MM/dd HH:mm')}"></label>
+                </div>
+                <div class="form-group">
+                    <label class="label-md col-md-12" for="title">내용 </label><br/>
+                    <!--                    <input class="text-area col-md-5" th:field="*{content}" id="content" name="content"-->
+                    <!--                           autofocus="autofocus" required="required" placeholder="내용을 입력하세요"/>-->
+                    <textarea class="form-control col-md-12" th:field="*{content}" id="content" name="content" rows="7"
+                              autofocus="autofocus" required="required" placeholder="내용을 입력하세요"></textarea>
+                </div>
+            </form>
+            <div class="form-group">
+                <button class="btn-default" style="float: left" id="cancelButton" name="cancelButton"
+                        onclick="location.href='/'"
+                        type="button">
+                    목록으로
+                </button>
+                <button class="btn-default" style="float: right" id="modifyButton" name="modifyButton" onclick="modifyBytton()" type="button">
+                    수정
+                </button>
+                <button class="btn-default" style="float: right" id="deleteButton" name="deleteButton" onclick="deleteBoard()"
+                        type="button">
+                    삭제
+                </button>
+                <button class="btn-default" style="float: right" id="saveButton" name="saveButton" onclick="writeBoard()" type="button">
+                    저장
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Default Bottom block -->
+
+</div>
+
+</body>
+</html>
